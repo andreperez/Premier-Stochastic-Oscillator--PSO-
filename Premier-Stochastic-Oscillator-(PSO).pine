@@ -1,0 +1,67 @@
+// @version=4
+// @author André Eduardo Pérez Álvarez
+// 
+// This is a improved version of Premier Stochastic Oscillator (PSO), developed by "LazyBear".
+//
+// Inprovements:
+//
+// - The script was update to version 4 of PineScript.
+// - Added support for diferents times frames. 
+// - For example, now it's possible to stay in intraday and at same time see a weekly version of this indicator.
+// - Possibility to customize the thresholds
+//
+// More info:
+// https://www.investopedia.com/articles/trading/10/premier_stochastic_oscillator_explained.asp
+
+
+study(title="Premier Stochastic Oscillator [andre_007]", shorttitle="Premier Stochastic Oscillator", format=format.price, precision=2, resolution="")
+
+//---------------------------------------------------------
+// Params
+//---------------------------------------------------------
+stochlen = input(8, title="Stoch length")
+smoothlen = input(25, title="Smooth length")
+
+inner_threshold_positive = input(defval=0.2, title="Inner threshold positive")
+inner_threshold_negative = input(defval=-0.2, title="Inner threshold negative")
+overbought_threshold = input(defval=0.9, title="Overbought threshold")
+top_line = input(defval=1, title="Top line")
+oversold_threshold = input(defval=-0.9, title="Oversold threshold")
+bottom_line = input(defval=-1, title="Bottom line")
+
+//---------------------------------------------------------
+// Calc
+//---------------------------------------------------------
+sk = stoch( close, high, low, stochlen)
+len = round(sqrt( smoothlen ))
+
+nsk = 0.1 * ( sk - 50 )
+ss = ema( ema( nsk, len ), len )
+expss = exp( ss )
+pso = ( expss - 1 )/( expss + 1 )
+
+//---------------------------------------------------------
+// Plot
+//---------------------------------------------------------
+// Oscilator curves
+plot( pso, color=iff(pso >= overbought_threshold, color.lime, iff(pso <= oversold_threshold, color.yellow, iff( pso < 0, color.new(color.rgb(204, 0, 0), 0), color.new(color.rgb(0, 102, 0), 0) ))), linewidth=1, title="Premier Stoch" )
+plot( pso, color=iff( pso < 0, color.new(color.rgb(204, 0, 0), 50), color.new(color.rgb(0, 102, 0), 50) ), style=plot.style_histogram )
+
+// Levels
+hline_center = hline(0, color=color.new(color.olive, 25), linestyle=hline.style_solid, title="Center line")
+
+hline_inner_positive = hline( inner_threshold_positive, color=color.new(color.green, 100), linestyle=hline.style_dotted, title="Inner threshold positive" )
+hline_inner_negative = hline( inner_threshold_negative, color=color.new(color.red, 100), linestyle=hline.style_dotted, title="Inner threshold negative")
+
+hline_overbought = hline( overbought_threshold, color=color.new(color.green, 100), linestyle=hline.style_solid, title="Overbought line")
+hline_oversold = hline( oversold_threshold, color=color.new(color.red, 100), linestyle=hline.style_solid, title="Oversold line")
+
+hline_top = hline( top_line, color=color.new(color.green, 100), linestyle=hline.style_dotted, title="Top line")
+hline_bottom = hline( bottom_line, color=color.new(color.red, 100), linestyle=hline.style_dotted, title="Bottom line")
+
+// Fills
+fill(hline_inner_positive, hline_center, color=color.new(color.green, 85), title = "Inner zone positive")
+fill(hline_center, hline_inner_negative,color=color.new(color.red, 85), title = "Inner zone negative")
+
+fill(hline_top, hline_overbought, color=color.new(color.green, 70), title = "Overbought zone")
+fill(hline_oversold, hline_bottom, color=color.new(color.red, 70), title = "Oversold zone")
